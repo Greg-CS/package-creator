@@ -1,0 +1,21 @@
+{
+  "name": "package-creator",
+  "version": "1.0.0",
+  "description": "testing package",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "index": "npx index"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^5.6.2",
+    "chalk-animation": "^2.0.3"
+  },
+  "devDependencies": {
+    "@types/chalk-animation": "^1.6.3",
+    "@types/node": "^25.0.0"
+  },
+  "keywords": []
+}
