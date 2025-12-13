@@ -1,21 +1,44 @@
 {
-  "name": "package-creator",
-  "version": "1.0.0",
-  "description": "testing package",
-  "main": "index.ts",
+  "name": "@greg-466/package-creator",
+  "version": "1.0.10",
+  "description": "package creator for node.js ",
+  "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "index": "npx index"
+    "clean": "rm -rf dist",
+    "build": "tsc",
+    "prepare": "npm run build",
+    "prettier": "prettier --write .",
+    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "publish": "git add . && git commit -m \"chore: update package-creator\" && git push && npm publish"
   },
-  "author": "",
+  "author": "Gregor Rodriguez",
   "license": "ISC",
+  "bin": {
+    "package-creator": "dist/index.js"
+  },
   "dependencies": {
     "chalk": "^5.6.2",
     "chalk-animation": "^2.0.3"
   },
   "devDependencies": {
     "@types/chalk-animation": "^1.6.3",
-    "@types/node": "^25.0.0"
+    "@types/node": "^25.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
   },
-  "keywords": []
+  "keywords": [
+    "cli",
+    "package",
+    "creator",
+    "node",
+    "typescript",
+    "scaffolding",
+    "boilerplate"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Greg-CS/package-creator"
+  }
 }
