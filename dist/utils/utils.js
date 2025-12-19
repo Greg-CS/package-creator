@@ -5,6 +5,7 @@ import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export function runInteractiveCommand(command, args) {
     return new Promise((resolve, reject) => {
@@ -58,7 +59,9 @@ async function bumpVersion() {
     await writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     console.log(chalk.green('package.json version bumped to'), chalk.cyan(pkg.version));
 }
-const isEntrypoint = process.argv[1] ? path.resolve(process.argv[1]) === path.resolve(__filename) : false;
+const isEntrypoint = process.argv[1]
+    ? path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url))
+    : false;
 if (isEntrypoint) {
     bumpVersion().catch((error) => {
         console.error('Failed to bump version before publish:', error);
