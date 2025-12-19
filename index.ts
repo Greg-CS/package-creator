@@ -309,9 +309,6 @@ async function ensurePrepublishHook(scriptRelativePath: string): Promise<void> {
         ? `${hookCommand} && ${existingHook}`
         : hookCommand;
     }
-    if (!pkg.scripts.publish || !pkg.scripts.publish.trim()) {
-      pkg.scripts.publish = "npm publish";
-    }
   });
 }
 
@@ -349,8 +346,8 @@ async function ensurePackageJsonSetup(meta: PackageMetadata): Promise<void> {
     if (!pkg.scripts.release) {
       pkg.scripts.release = 'node scripts/release.mjs';
     }
-    if (!pkg.scripts.publish) {
-      pkg.scripts.publish = 'node --loader ts-node/esm utils/utils.ts';
+    if (!pkg.scripts.version) {
+      pkg.scripts.version = 'node --loader ts-node/esm utils/utils.ts';
     }
   });
 }

@@ -12,7 +12,7 @@
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1",
     "release": "node scripts/release.mjs",
-    "publish": "npm publish"
+    "pub": "npm publish"
   },
   "author": "Gregor Rodriguez",
   "license": "ISC",
