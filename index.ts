@@ -5,8 +5,8 @@ import chalkAnimation from 'chalk-animation';
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { spawn } from 'node:child_process';
 import fs from 'node:fs/promises';
+import { ensureUtilsScaffold, runInteractiveCommand } from './utils/utils.js';
 
 const cliArgs = process.argv.slice(2);
 const options = {
@@ -16,24 +16,6 @@ const options = {
 
 const spinFrames = [...'⣾⣽⣻⢿⡿⣟⣯⣷'] as const;
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-
-function runInteractiveCommand(command: string, args: string[]): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: 'inherit' });
-
-    child.on('error', (error) => {
-      reject(error);
-    });
-
-    child.on('exit', (code) => {
-      if (code === 0) {
-        resolve();
-      } else {
-        reject(new Error(`${command} ${args.join(' ')} exited with code ${code}`));
-      }
-    });
-  });
-}
 
 type PackageBin = string | Record<string, string>;
 
@@ -187,11 +169,10 @@ async function ensurePackageJsonInitialized(): Promise<void> {
     console.log('You can press Ctrl+C to abort and run `npm init -y` yourself if you prefer.\n');
 
     await runInteractiveCommand('npm', ['init']);
+    await runInteractiveCommand('npm', ['install', '-D', 'typescript']);
+    await runInteractiveCommand('npm', ['install', '-D', 'ts-node']);
+    await runInteractiveCommand('npm', ['install', 'chalk', 'chalk-animation']);
   }
-}
-
-async function packageCreator(durationMs: number): Promise<void> {
-  await sleep(durationMs);
   const targetTsConfig = path.join('.', 'tsconfig.json')
 
   if (existsSync(targetTsConfig)) {
@@ -223,7 +204,29 @@ async function packageCreator(durationMs: number): Promise<void> {
   //   **    CREATE FILE FOR index.ts    **
   await ensureFileWritten(
     path.join(".", "index.ts"),
-    `export const hello = () => console.log("Hello World");`,
+    `#!/usr/bin/env node
+
+import chalk from 'chalk';
+import chalkAnimation from 'chalk-animation';
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+async function showHeader(): Promise<void> {
+  const animation = chalkAnimation.rainbow(chalk.bold('Welcome!'));
+  await sleep(1200);
+  animation.stop();
+}
+
+export async function main(): Promise<void> {
+  await showHeader();
+  console.log(chalk.green('Hello World'));
+}
+
+main().catch((error) => {
+  console.error(chalk.red('Fatal error:'), error);
+  process.exit(1);
+});
+`,
     'index.ts'
   );
 
@@ -235,6 +238,10 @@ async function packageCreator(durationMs: number): Promise<void> {
   } else {
     console.log('Skipping README.md (per --skip-readme).');
   }
+
+  //   **    CREATE FILE FOR scripts/release.mjs    **
+  const releaseTemplate = await fs.readFile(new URL('./scripts/release.mjs', import.meta.url), 'utf8');
+  await ensureUtilsScaffold('scripts', 'release.mjs', releaseTemplate);
 
   //   **    UPDATE package.json STRUCTURE    **
   await ensurePackageJsonSetup(pkgMeta);
@@ -248,36 +255,6 @@ async function packageCreator(durationMs: number): Promise<void> {
   //   **    CREATE FILE FOR .npmignore    **
   await ensureFileWritten(path.join(".", ".npmignore"), "", '.npmignore');
 
-}
-
-async function ensureUtils(folderPath: string, fileName?: string): Promise<void> {
-  if (!existsSync(folderPath)) {
-    await mkdir(folderPath, { recursive: true });
-    const animation = chalkAnimation.rainbow(`Folder ${folderPath} created successfully!`);
-    await sleep(2000);
-    animation.stop();
-  } else {
-    const animation = chalkAnimation.glitch(`Folder ${folderPath} already exists!`);
-    await sleep(2000);
-    animation.stop();
-  }
-
-  if (!fileName) {
-    return;
-  }
-
-  const targetFile = path.join(folderPath, fileName);
-  if (existsSync(targetFile)) {
-    const animation = chalkAnimation.glitch(`File ${fileName} already exists!`);
-    await sleep(2000);
-    animation.stop();
-    return;
-  }
-
-  await writeFile(targetFile, '');
-  const animation = chalkAnimation.rainbow(`File ${fileName} created successfully!`);
-  await sleep(2000);
-  animation.stop();
 }
 
 const versionScriptTemplate = `#!/usr/bin/env node
@@ -315,7 +292,7 @@ async function ensureVersionAutomation(): Promise<void> {
 
   if (!existsSync(scriptPath)) {
     await writeFile(scriptPath, versionScriptTemplate);
-    console.log(`Created ${path.relative(".", scriptPath)} for version bumping.`);
+    console.log(`\nCreated ${path.relative(".", scriptPath)} for version bumping.`);
   }
 
   await ensurePrepublishHook(path.posix.join("scripts", scriptName));
@@ -369,6 +346,9 @@ async function ensurePackageJsonSetup(meta: PackageMetadata): Promise<void> {
     if (!pkg.scripts.test) {
       pkg.scripts.test = 'echo "Error: no test specified" && exit 1';
     }
+    if (!pkg.scripts.release) {
+      pkg.scripts.release = 'node scripts/release.mjs';
+    }
     if (!pkg.scripts.publish) {
       pkg.scripts.publish = 'node --loader ts-node/esm utils/utils.ts';
     }
@@ -389,12 +369,25 @@ async function ensureFileWritten(filePath: string, contents: string, label: stri
     return;
   }
   await writeFile(filePath, contents);
-  console.log(`${options.force ? 'Wrote' : 'Created'} ${label}`);
+  /**
+   * Minimal example of using chalk for human-friendly CLI output.
+   * (Avoid overusing colors; keep it to short status messages.)
+   */
+  console.log(chalk.green(`${options.force ? 'Wrote' : 'Created'} ${label}`));
 }
 
-(async () => {
+async function main(): Promise<void> {
   await showHeader();
-  await ensureUtils('utils', 'utils.ts');
+  const utilsTemplate = await fs.readFile(new URL('./utils/utils.ts', import.meta.url), 'utf8');
+
+  await ensureUtilsScaffold('utils', 'utils.ts', utilsTemplate);
+  
   await ensurePackageJsonInitialized();
-  await spinner(packageCreator(3000), 'NODEJS PACKAGE STARTER KIT CREATED');
-})();
+  await spinner(runInteractiveCommand('npm', ['install']), 'Dependencies installed');
+  console.log(chalk.green('\nNODEJS PACKAGE STARTER KIT CREATED'));
+}
+
+main().catch((error) => {
+  console.error(chalk.red('Fatal error:'), error);
+  process.exit(1);
+});

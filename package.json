@@ -11,7 +11,8 @@
     "prettier": "prettier --write .",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "publish": "git add . && git commit -m \"chore: update package-creator\" && git push && npm publish"
+    "release": "node scripts/release.mjs",
+    "publish": "npm publish"
   },
   "author": "Gregor Rodriguez",
   "license": "ISC",
