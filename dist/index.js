@@ -247,9 +247,6 @@ async function ensurePrepublishHook(scriptRelativePath) {
                 ? `${hookCommand} && ${existingHook}`
                 : hookCommand;
         }
-        if (!pkg.scripts.publish || !pkg.scripts.publish.trim()) {
-            pkg.scripts.publish = "npm publish";
-        }
     });
 }
 async function ensurePackageJsonSetup(meta) {
@@ -285,8 +282,8 @@ async function ensurePackageJsonSetup(meta) {
         if (!pkg.scripts.release) {
             pkg.scripts.release = 'node scripts/release.mjs';
         }
-        if (!pkg.scripts.publish) {
-            pkg.scripts.publish = 'node --loader ts-node/esm utils/utils.ts';
+        if (!pkg.scripts.version) {
+            pkg.scripts.version = 'node --loader ts-node/esm utils/utils.ts';
         }
     });
 }
